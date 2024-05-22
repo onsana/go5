@@ -3,9 +3,14 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"sort"
 )
+
+type Model struct {
+	Id int
+}
 
 func main() {
 	// first
@@ -30,18 +35,25 @@ func main() {
 		}
 	}
 	// second
-	nums := []int{1, 5, 3, 2, 4, 3, 5, 4, 2}
+	var nums = []Model{}
+	for i := 0; i < 10; i++ {
+		nums = append(nums, Model{
+			Id: rand.Intn(10),
+		})
+	}
 	unique := removeDuplicates(nums)
-	sort.Ints(unique)
+	sort.Slice(unique, func(i, j int) bool {
+		return unique[i].Id < unique[j].Id
+	})
 	fmt.Println(unique)
 }
 
-func removeDuplicates(slice []int) []int {
-	result := []int{}
+func removeDuplicates(slice []Model) []Model {
+	result := []Model{}
 	for i := 0; i < len(slice); i++ {
 		duplicate := false
 		for j := 0; j < len(result); j++ {
-			if slice[i] == result[j] {
+			if slice[i].Id == result[j].Id {
 				duplicate = true
 				break
 			}
