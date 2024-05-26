@@ -3,7 +3,8 @@ package main
 import "fmt"
 
 type zooKeeper struct {
-	name string
+	name  string
+	cages [5]cage
 }
 
 type animal struct {
@@ -20,6 +21,13 @@ type cage struct {
 
 func main() {
 	zooKeeper := zooKeeper{name: "Jonh"}
+	for i := 0; i < 5; i++ {
+		zooKeeper.cages[i] = cage{
+			id:     uint(i + 1),
+			status: "Open",
+		}
+	}
+
 	var animals [5]animal
 	for i := 0; i < 5; i++ {
 		animals[i] = animal{
@@ -28,26 +36,18 @@ func main() {
 			age:  i + 1,
 		}
 	}
-	var cages [5]cage
-	for i := 0; i < 5; i++ {
-		cages[i] = cage{
-			id:     uint(i + 1),
-			status: "Open",
-		}
-	}
 
 	fmt.Printf("5 monkeys escaped from the zoo: %+v\n", animals)
-	fmt.Printf("All cages left open: %+v\n", cages)
+	fmt.Printf("All cages left open \n")
 	fmt.Printf("5 monkeys started to catch the zookeeper %s\n", zooKeeper.name)
 
-	for i := 0; i < 5; i++ {
-		catchMonkey(&animals[i], &cages[i])
-	}
-
+	zooKeeper.catchAnimal(&animals)
 }
 
-func catchMonkey(animal *animal, cage *cage) {
-	cage.animal = *animal
-	cage.status = "Lock"
-	fmt.Printf("Monkey number %v was caught and locked in a cage\n", animal.id)
+func (z zooKeeper) catchAnimal(animals *[5]animal) {
+	for i := 0; i < 5; i++ {
+		z.cages[i].animal = animals[i]
+		z.cages[i].status = "Lock"
+		fmt.Printf("Animal number %v was caught and locked in a cage\n", animals[i].id)
+	}
 }
