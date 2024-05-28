@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"sort"
+	"strings"
 )
 
 type Model struct {
@@ -25,10 +26,13 @@ func main() {
 		scanner.Scan()
 		redactor = append(redactor, scanner.Text())
 	}
-	text := "А ми тую червону калину підіймемо,"
+	scannerText := bufio.NewScanner(os.Stdin)
+	fmt.Print("Введіть слова для пошуку: ")
+	scannerText.Scan()
+	text := scannerText.Text()
 	for _, u := range redactor {
 		fmt.Println("Текст користувача ", u)
-		if u == text {
+		if strings.Contains(u, text) {
 			fmt.Println("Ураааа, нарешті знайшли")
 		} else {
 			fmt.Println("На жаль, знову не то")
