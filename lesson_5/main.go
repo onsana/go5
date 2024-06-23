@@ -14,11 +14,13 @@ type Row struct {
 func main() {
 	text := getAllText()
 	word := "wisdom"
-	rows := wordSearch(text, word)
-	fmt.Println(rows)
 	words := textToWords(text)
 	frequency := wordFrequency(words)
 	fmt.Println(frequency)
+	mapWords := indexText(words)
+	fmt.Println(mapWords)
+	wordRows := mapWords[word]
+	fmt.Println(wordRows)
 }
 
 func getAllText() []string {
@@ -61,12 +63,13 @@ func wordFrequency(words []string) map[string]int {
 	return frequency
 }
 
-func wordSearch(text []string, word string) []Row {
-	result := []Row{}
-	for i, v := range text {
-		if strings.Contains(v, word) {
-			result = append(result, Row{Id: i})
-		}
+func indexText(words []string) map[string][]Row {
+	result := make(map[string][]Row)
+
+	for i, word := range words {
+		word = strings.ToLower(word)
+		result[word] = append(result[word], Row{Id: i})
 	}
+
 	return result
 }
