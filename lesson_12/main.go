@@ -14,60 +14,64 @@ func main() {
 
 func readNumbers() {
 	const path = "files/1689007675141_numbers.txt"
-	file, err := os.Open(path)
+	phoneRegex := compilePhoneRegex()
+
+	content, err := readFileContent(path)
 	if err != nil {
-		fmt.Println("Помилка відкриття файлу:", err)
+		fmt.Println(err)
 		return
 	}
-	defer file.Close()
-	re := regexp.MustCompile(`\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}`)
+	phoneNumbers := findResults(content, phoneRegex)
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := re.FindAllString(line, -1)
-		for _, match := range matches {
-			fmt.Println("Знайдено телефонний номер:", match)
-		}
+	for _, number := range phoneNumbers {
+		fmt.Println(number)
 	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Помилка читання файлу:", err)
-	}
+}
+
+func compilePhoneRegex() *regexp.Regexp {
+	return regexp.MustCompile(`\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}`)
+}
+
+func findResults(content string, Regex *regexp.Regexp) []string {
+	return Regex.FindAllString(content, -1)
 }
 
 func readText() {
 	path := "files/1689007676028_text.txt"
+	textRegex := compileTextRegex()
 
-	file, err := os.Open(path)
+	content, err := readFileContent(path)
 	if err != nil {
-		fmt.Println("Помилка відкриття файлу:", err)
+		fmt.Println(err)
 		return
 	}
-	defer file.Close()
+	rows := findResults(content, textRegex)
 
-	vowelConsonantRe := regexp.MustCompile(`^[аеєиіїоуюяАЕЄИІЇОУЮЯ][а-яА-Я]*[^аеєиіїоуюя\s]$`)
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		vowelConsonantMatches := vowelConsonantRe.FindAllString(line, -1)
-		for _, match := range vowelConsonantMatches {
-			fmt.Println("Знайдено слово (голосна-прголосна):", match)
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Помилка читання файлу:", err)
+	for _, row := range rows {
+		fmt.Println(row)
 	}
 }
 
-func hasDoubleLetter(word string) bool {
-	runes := []rune(word)
-	for i := 0; i < len(runes)-2; i++ {
-		if runes[i] == runes[i+2] {
-			return true
-		}
+func compileTextRegex() *regexp.Regexp {
+	return regexp.MustCompile(`^[аеєиіїоуюяАЕЄИІЇОУЮЯ][а-яА-Я]*[^аеєиіїоуюя\s]$`)
+}
+
+func readFileContent(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("не вдалося відкрити файл: %v", err)
 	}
-	return false
+	defer file.Close()
+
+	var content string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		content += scanner.Text() + "\n"
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", fmt.Errorf("помилка читання файлу: %v", err)
+	}
+
+	return content, nil
 }
