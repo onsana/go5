@@ -2,91 +2,76 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 type Student struct {
-	ID     int
-	Name   string
-	Grades map[string]float64
+	ID     int                `json:"id"`
+	Name   string             `json:"name"`
+	Grades map[string]float64 `json:"grades"`
 }
 
 type Class struct {
-	Name     string
-	Teacher  string
-	Students []Student
+	ClassName string          `json:"class_name"`
+	Students  map[int]Student `json:"students"`
 }
 
-var classData Class
+var classData = Class{
+	ClassName: "10-A",
+	Students: map[int]Student{
+		1: {ID: 1, Name: "John Doe", Grades: map[string]float64{"math": 90, "science": 85}},
+		2: {ID: 2, Name: "Jane Smith", Grades: map[string]float64{"math": 95, "science": 80}},
+	},
+}
 
-func init() {
-	classData = Class{
-		Name:    "5-B",
-		Teacher: "Mr. Smith",
-		Students: []Student{
-			{ID: 1, Name: "John Doe", Grades: map[string]float64{"Math": 85, "English": 90}},
-			{ID: 2, Name: "Jane Doe", Grades: map[string]float64{"Math": 92, "English": 88}},
-		},
+func basicAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, pass, ok := r.BasicAuth()
+		if !ok || !validateUser(user, pass) {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
 	}
 }
 
-func main() {
-	http.HandleFunc("/class", classHandler)
-	http.HandleFunc("/student/", studentHandler)
-
-	log.Println("Starting server on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+func validateUser(username, password string) bool {
+	return username == "teacher" && password == "password123"
 }
 
-func classHandler(w http.ResponseWriter, r *http.Request) {
-	if !isTeacher(r) {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(classData); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+func getClassInfo(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(classData)
 }
 
-func studentHandler(w http.ResponseWriter, r *http.Request) {
-	if !isTeacher(r) {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	idStr := strings.TrimPrefix(r.URL.Path, "/student/")
-	id, err := strconv.Atoi(idStr)
-	if err != nil || id <= 0 {
+func getStudentInfo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	studentID, err := strconv.Atoi(vars["id"])
+	if err != nil {
 		http.Error(w, "Invalid student ID", http.StatusBadRequest)
 		return
 	}
 
-	student, found := getStudentByID(id)
-	if !found {
+	student, exists := classData.Students[studentID]
+	if !exists {
 		http.Error(w, "Student not found", http.StatusNotFound)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(student); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	json.NewEncoder(w).Encode(student)
 }
 
-func isTeacher(r *http.Request) bool {
-	return r.Header.Get("X-Teacher") == classData.Teacher
-}
+func main() {
+	r := mux.NewRouter()
 
-func getStudentByID(id int) (Student, bool) {
-	for _, student := range classData.Students {
-		if student.ID == id {
-			return student, true
-		}
-	}
-	return Student{}, false
+	r.HandleFunc("/class", basicAuth(getClassInfo)).Methods("GET")
+	r.HandleFunc("/student/{id}", basicAuth(getStudentInfo)).Methods("GET")
+
+	fmt.Println("Server is running on port 8000...")
+	log.Fatal(http.ListenAndServe(":8000", r))
 }
