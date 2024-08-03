@@ -3,46 +3,35 @@ package database
 import (
 	"docker_postgres/models"
 	"fmt"
-	"log"
 	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-type Dbinstance struct {
-	Db *gorm.DB
-}
+var DB *gorm.DB
 
-var DB Dbinstance
-
-func ConnectDb() {
+func Connect() error {
 	dsn := fmt.Sprintf(
 		"host=postgresdb user=%s password=%s dbname=%s port=5432 sslmode=disable",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
 	)
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
-
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database. \n", err)
-		os.Exit(2)
+		return err
 	}
 
-	log.Println("connected")
-	db.Logger = logger.Default.LogMode(logger.Info)
+	DB = db
+	return nil
+}
 
-	log.Println("running migrations")
-	db.AutoMigrate(&models.Fact{})
+func GetDB() *gorm.DB {
+	return DB
+}
 
-	DB = Dbinstance{
-
-		Db: db,
-	}
-
+func AutoMigrate() error {
+	db := GetDB()
+	return db.AutoMigrate(&models.Fact{})
 }

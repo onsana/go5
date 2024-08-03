@@ -8,13 +8,15 @@ import (
 )
 
 func ListFacts(c *fiber.Ctx) error {
+	db := database.GetDB()
 	facts := []models.Fact{}
-	database.DB.Db.Find(&facts)
+	db.Find(&facts)
 
 	return c.Status(200).JSON(facts)
 }
 
 func CreateFact(c *fiber.Ctx) error {
+	db := database.GetDB()
 	fact := new(models.Fact)
 	if err := c.BodyParser(fact); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -22,7 +24,7 @@ func CreateFact(c *fiber.Ctx) error {
 		})
 	}
 
-	database.DB.Db.Create(&fact)
+	db.Create(&fact)
 
 	return c.Status(200).JSON(fact)
 }
