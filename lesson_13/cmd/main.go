@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 
@@ -9,47 +8,50 @@ import (
 )
 
 func main() {
-	mgr := manager.NewManager("passwords.json")
-
-	scanner := bufio.NewScanner(os.Stdin)
-	for {
-		fmt.Println("1. List passwords")
-		fmt.Println("2. Save a password")
-		fmt.Println("3. Retrieve a password")
-		fmt.Println("4. Exit")
-		fmt.Print("Choose an option: ")
-		scanner.Scan()
-		choice := scanner.Text()
-
-		switch choice {
-		case "1":
-			names := mgr.ListNames()
-			fmt.Println("Stored passwords:")
-			for _, name := range names {
-				fmt.Println(name)
-			}
-		case "2":
-			fmt.Print("Enter name: ")
-			scanner.Scan()
-			name := scanner.Text()
-			fmt.Print("Enter password: ")
-			scanner.Scan()
-			password := scanner.Text()
-			mgr.SavePassword(name, password)
-		case "3":
-			fmt.Print("Enter name: ")
-			scanner.Scan()
-			name := scanner.Text()
-			password, found := mgr.GetPassword(name)
-			if found {
-				fmt.Println("Password:", password)
-			} else {
-				fmt.Println("Password not found")
-			}
-		case "4":
-			return
-		default:
-			fmt.Println("Invalid choice, please try again.")
-		}
+	if len(os.Args) < 2 {
+		printUsage()
+		return
 	}
+
+	mgr := manager.NewManager("passwords.json")
+	command := os.Args[1]
+
+	switch command {
+	case "list":
+		names := mgr.ListNames()
+		fmt.Println("Stored passwords:")
+		for _, name := range names {
+			fmt.Println(name)
+		}
+	case "put":
+		if len(os.Args) != 4 {
+			fmt.Println("Usage: ./password-manager put <name> <password>")
+			return
+		}
+		name := os.Args[2]
+		password := os.Args[3]
+		mgr.SavePassword(name, password)
+		fmt.Printf("Password for '%s' saved.\n", name)
+	case "get":
+		if len(os.Args) != 3 {
+			fmt.Println("Usage: ./password-manager get <name>")
+			return
+		}
+		name := os.Args[2]
+		password, found := mgr.GetPassword(name)
+		if found {
+			fmt.Printf("Password for '%s': %s\n", name, password)
+		} else {
+			fmt.Printf("Password for '%s' not found.\n", name)
+		}
+	default:
+		printUsage()
+	}
+}
+
+func printUsage() {
+	fmt.Println("Usage:")
+	fmt.Println("  ./password-manager list              - List all stored passwords")
+	fmt.Println("  ./password-manager put <name> <password> - Save a password")
+	fmt.Println("  ./password-manager get <name>        - Retrieve a password")
 }
